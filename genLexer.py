@@ -240,13 +240,32 @@ def glue_nfas(nfas: iter) -> NFA:
 
 
 # -----------------------------------------------------------------------------|
+def _get_ε_closure(visited: set, transition: dict,
+                   ε_closure: dict, state: int) -> None:
+    """
+
+    """
+
+    if state in visited:
+        return
+
+    visited.add(state)
+    ε_closure[state] = set()
+    for ε_transition_state in transition[(state, ε)]:
+        _get_ε_closure(visited, transition, ε_closure, ε_transition_state)
+        ε_closure[state].add(ε_closure[ε_transition_state])
+# -----------------------------------------------------------------------------|
+
+
+# -----------------------------------------------------------------------------|
 def get_ε_closure(transition) -> dict:
     """
 
     """
 
-    ε_closure = defaultdict(set)
-
+    ε_closure, visited = {}, set()
+    for state in range(state_counter):
+        _get_ε_closure(visited, transition, ε_closure, state)
     return ε_closure
 # -----------------------------------------------------------------------------|
 
