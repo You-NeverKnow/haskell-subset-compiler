@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4545d5b8-851e-47fd-a5a2-21e5d89de6f6" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/genLexer.py" beforeDir="false" afterPath="$PROJECT_DIR$/genLexer.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -23,8 +21,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/genLexer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="619">
-              <caret line="275" lean-forward="true" selection-start-line="275" selection-end-line="275" />
+            <state relative-caret-position="-116">
+              <caret line="263" column="38" lean-forward="true" selection-start-line="263" selection-start-column="38" selection-end-line="263" selection-end-column="38" />
               <folding>
                 <element signature="e#0#35#0" expanded="true" />
               </folding>
@@ -179,8 +177,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/genLexer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="619">
-          <caret line="275" lean-forward="true" selection-start-line="275" selection-end-line="275" />
+        <state relative-caret-position="-116">
+          <caret line="263" column="38" lean-forward="true" selection-start-line="263" selection-start-column="38" selection-end-line="263" selection-end-column="38" />
           <folding>
             <element signature="e#0#35#0" expanded="true" />
           </folding>

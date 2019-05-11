@@ -252,6 +252,20 @@ def get_ε_closure(transition) -> dict:
 
 
 # -----------------------------------------------------------------------------|
+def identify_lexeme(nfa: NFA, ε_closure: dict,
+                    string: str, index: int) -> tuple:
+    """
+
+    """
+
+    if index == len(string):
+        return None, None, index
+    transition, start, final = nfa.transition, nfa.start, nfa.final
+    starting_states = ε_closure[start]
+# -----------------------------------------------------------------------------|
+
+
+# -----------------------------------------------------------------------------|
 def make_lexer(spec: LexerSpecification):
     """
 
@@ -278,9 +292,12 @@ def make_lexer(spec: LexerSpecification):
         tokens = []
         i = 0
         while i < len(string):
-            final_state, lexeme = get_state(i)
-            token = gen_actions[final_state](lexeme)
-            tokens.append(token)
+            final_state, lexeme, i = identify_lexeme(spec_nfa, ε_closure,
+                                                     string, i)
+            state_action = gen_actions[final_state]
+            if action:
+                token = state_action(lexeme)
+                tokens.append(token)
         return tokens
 
     return _lexer
