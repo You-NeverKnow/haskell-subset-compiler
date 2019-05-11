@@ -1,4 +1,6 @@
 from collections import defaultdict
+from pprint import pprint, PrettyPrinter
+
 from regex_primitives import *
 
 
@@ -19,7 +21,13 @@ class Token:
         self.lexeme = lexeme
     # -------------------------------------------------------------------------|
 
+    # -------------------------------------------------------------------------|
+    def __repr__(self):
+        """
 
+        """
+        return f"Token({type(self)} {self.lexeme})"
+    # -------------------------------------------------------------------------|
 # =============================================================================|
 
 
@@ -391,41 +399,43 @@ def get_ε_closure(transition: dict) -> dict:
 
 # -----------------------------------------------------------------------------|
 def apply_nfa(ε_closure: dict, transition: dict, final_states: set, string: str,
-              index: int, starting_states: set,
-              reached_final_states: set) -> None:
+              index: int, starting_states: set, reached_final_states: set):
     """
 
     """
-    
-    # debug
-    # print(f"reached_final_states = {reached_final_states}")
-    
+
+    # All lexemes found for original starting index
     if len(starting_states) == 0:
         return
 
+    # EOF
     if index == len(string):
         return
+
+    # Get next states
     next_states = set()
-    # debug
-    # print(f"starting_states = {starting_states}")
-
     for state in starting_states:
-        if state in final_states:
-            reached_final_states.add((state, index))
-
         _next_states = apply_trans(transition, state, string[index])
+
         for next_state in _next_states:
+            next_states.add(next_state)
             if next_state in ε_closure:
                 next_states = next_states.union(ε_closure[next_state])
 
+    # Check to see if we found final states
+    intersection = final_states.intersection(next_states)
+    if intersection:
+        for state in intersection:
+            reached_final_states.add((state, index+1))
+
     apply_nfa(ε_closure, transition, final_states, string,
-              index + 1, next_states.difference(starting_states), reached_final_states)
+              index + 1, next_states, reached_final_states)
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
 def identify_lexeme(nfa: NFA, ε_closure: dict,
-                    string: str, final_states: set) -> tuple:
+                    string: str, final_states: set, index: int) -> tuple:
     """
 
     """
@@ -435,7 +445,7 @@ def identify_lexeme(nfa: NFA, ε_closure: dict,
               transition = transition,
               final_states = final_states,
               string = string,
-              index = 0,
+              index = index,
               starting_states = ε_closure[start],
               reached_final_states = reached_final_states)
 
@@ -451,7 +461,10 @@ def make_lexer(spec: LexerSpecification):
 
     gen_actions = dict()
     environment = build_env(spec.binding_list)
-
+    
+    # debug
+    print(f"environment = {environment}")
+    
     nfas = set()
     for named_regex, action in spec.patterns:
         extended_regex = extended_from_named(named_regex, environment)
@@ -464,9 +477,26 @@ def make_lexer(spec: LexerSpecification):
         gen_actions[nfa.final] = action
 
     spec_nfa = glue_nfas(nfas)
-    final_states = {nfa.final for nfa in nfas}
-    ε_closure = get_ε_closure(spec_nfa.transition)
+    
+    # debug
+    print(f"spec_nfa.final = {spec_nfa.final}")
+    print(f"spec_nfa.start = {spec_nfa.start}")
 
+    # debug
+
+    for key, val in spec_nfa.transition.items():
+        print(key, ":", val)
+    final_states = {nfa.final for nfa in nfas}
+    
+    # debug
+    print(f"final_states = {final_states}")
+    
+    ε_closure = get_ε_closure(spec_nfa.transition)
+    
+    # debug
+    for key, val in ε_closure.items():
+        print(key, ":", val)
+    
     def _lexer(string: str):
         tokens = []
         lexeme_start = 0
@@ -474,12 +504,15 @@ def make_lexer(spec: LexerSpecification):
             final_state, lexeme_end = identify_lexeme(nfa = spec_nfa,
                                                       ε_closure = ε_closure,
                                                       string = string,
-                                                      final_states =
-                                                      final_states)
+                                                      final_states = final_states,
+                                                      index = lexeme_start)
             state_action = gen_actions[final_state]
             if state_action:
                 token = state_action(string[lexeme_start: lexeme_end])
                 tokens.append(token)
+            lexeme_start = lexeme_end
+
+        tokens.append(spec.eof)
         return tokens
 
     return _lexer
@@ -493,7 +526,7 @@ def main():
     """
 
     # string = sys.argv[1]
-    string = "23"
+    string = "2*3=4"
     _lexer = make_lexer(LexerSpecification())
     tokens = _lexer(string)
     print(tokens)
