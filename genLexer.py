@@ -1,8 +1,96 @@
 from collections import defaultdict
-
-from lexer import LexerSpecification
 from regex_primitives import *
 
+
+class EOF: pass
+
+
+# =============================================================================|
+class Token:
+    """
+
+    """
+
+    # -------------------------------------------------------------------------|
+    def __init__(self, lexeme):
+        """
+        Constructor for Token
+        """
+        self.lexeme = lexeme
+    # -------------------------------------------------------------------------|
+
+
+# =============================================================================|
+
+
+class LET(Token): pass
+
+
+class IN(Token): pass
+
+
+class EQ(Token): pass
+
+
+class COMMA(Token): pass
+
+
+class PLUS(Token): pass
+
+
+class MINUS(Token): pass
+
+
+class STAR(Token): pass
+
+
+class SLASH(Token): pass
+
+
+class INT(Token): pass
+
+
+class ID(Token): pass
+
+
+# =============================================================================|
+class LexerSpecification:
+    """
+
+    """
+
+    # -------------------------------------------------------------------------|
+    def __init__(self):
+        """
+        Constructor for LexerSpecification
+        """
+        self.eof = EOF()
+        self.binding_list = {
+            "whitespace":Range(Char(chr(0)), Char(chr(32))),
+            "upper":Range(Char("A"), Char("Z")),
+            "lower":Range(Char("a"), Char("z")),
+            "letter":Or(Name("lower"), Name("upper")),
+            "letters":Plus(Name("letter")),
+            "digit":Range(Char("0"), Char("9")),
+            "digits":Plus(Name("digit"))
+        }
+        self.patterns = [
+            (Plus(Name("whitespace")), False),
+            ("let", LET),
+            ("in", IN),
+            ("=", EQ),
+            (",", COMMA),
+            ("+", PLUS),
+            ("-", MINUS),
+            ("*", STAR),
+            ("/", SLASH),
+            (Name("letters"), ID),
+            (Name("digits"), INT),
+        ]
+    # -------------------------------------------------------------------------|
+
+
+# =============================================================================|
 
 # -----------------------------------------------------------------------------|    
 def extended_from_named(named_regex, binding_list: dict):
@@ -79,7 +167,7 @@ def regular_from_extended(extended_regex):
         return Sequence(r1, r2)
 
     elif type(extended_regex) == Star:
-        regex = regular_from_extended(extended_regex)
+        regex = regular_from_extended(extended_regex.r)
         return Star(regex)
 
     elif type(extended_regex) == str:
@@ -89,11 +177,11 @@ def regular_from_extended(extended_regex):
         return Sequence(Char(extended_regex[0]), regex)
 
     elif type(extended_regex) == Optional:
-        regex = regular_from_extended(extended_regex)
+        regex = regular_from_extended(extended_regex.r)
         return Or(ε(), regex)
 
     elif type(extended_regex) == Plus:
-        regex = regular_from_extended(extended_regex)
+        regex = regular_from_extended(extended_regex.r)
         return Or(regex, Star(regex))
 
     elif type(extended_regex) == Σ:
@@ -107,7 +195,7 @@ def regular_from_extended(extended_regex):
 
     elif type(extended_regex) == Range:
         range_chars = [chr(i) for i in range(ord(extended_regex.start.ch),
-                                             ord(extended_regex.end.ch+1))]
+                                             ord(extended_regex.end.ch)+1)]
         return create_Or_Tree(range_chars)
     else:
         # ε, Char
@@ -350,3 +438,24 @@ def make_lexer(spec: LexerSpecification):
 
     return _lexer
 # -----------------------------------------------------------------------------|
+
+
+# -----------------------------------------------------------------------------|
+def main():
+    """
+
+    """
+
+    # string = sys.argv[1]
+    string = "2+3*4"
+    _lexer = make_lexer(LexerSpecification())
+    tokens = _lexer(string)
+    print(tokens)
+
+
+# -----------------------------------------------------------------------------|
+
+
+if __name__ == '__main__':
+    main()
+
