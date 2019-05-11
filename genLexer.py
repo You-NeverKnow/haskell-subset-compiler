@@ -252,6 +252,32 @@ def get_ε_closure(transition) -> dict:
 
 
 # -----------------------------------------------------------------------------|
+def apply_nfa(ε_closure: dict, transition: dict, final: set, string: str,
+              index: int, starting_states: set, final_states: set) -> tuple:
+    """
+
+    """
+
+    if len(starting_states) == 0:
+        return final_states, index
+
+    if index == len(string):
+        raise SyntaxError("Syntax error in code file")
+
+    next_states = set()
+    for state in starting_states:
+        _next_states = apply_trans(transition, state, string[index])
+        for next_state in _next_states:
+            if next_state in final:
+                final_states.add(next_state)
+            next_states.union(ε_closure[next_state])
+
+    return apply_nfa(ε_closure, transition, final, string,
+                     index+1, next_states, final_states)
+# -----------------------------------------------------------------------------|
+
+
+# -----------------------------------------------------------------------------|
 def identify_lexeme(nfa: NFA, ε_closure: dict,
                     string: str, index: int) -> tuple:
     """
@@ -259,9 +285,12 @@ def identify_lexeme(nfa: NFA, ε_closure: dict,
     """
 
     if index == len(string):
-        return None, None, index
+        return None, index
     transition, start, final = nfa.transition, nfa.start, nfa.final
-    starting_states = ε_closure[start]
+    
+    final_states = apply_nfa(ε_closure, transition, final, string,
+                             index, {start}, set())
+    return min(final_states)
 # -----------------------------------------------------------------------------|
 
 
@@ -290,13 +319,13 @@ def make_lexer(spec: LexerSpecification):
 
     def _lexer(string: str):
         tokens = []
-        i = 0
-        while i < len(string):
-            final_state, lexeme, i = identify_lexeme(spec_nfa, ε_closure,
-                                                     string, i)
+        lexeme_start = 0
+        while lexeme_start < len(string):
+            final_state, lexeme_end = identify_lexeme(spec_nfa, ε_closure,
+                                                      string, lexeme_start)
             state_action = gen_actions[final_state]
             if action:
-                token = state_action(lexeme)
+                token = state_action(string[lexeme_start: lexeme_end])
                 tokens.append(token)
         return tokens
 
