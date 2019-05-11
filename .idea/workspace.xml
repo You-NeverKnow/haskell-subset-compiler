@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4545d5b8-851e-47fd-a5a2-21e5d89de6f6" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/genLexer.py" beforeDir="false" afterPath="$PROJECT_DIR$/genLexer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/regex_primitives.py" beforeDir="false" afterPath="$PROJECT_DIR$/regex_primitives.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,8 +21,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/genLexer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="59">
-              <caret line="334" column="57" lean-forward="true" selection-start-line="334" selection-start-column="57" selection-end-line="334" selection-end-column="57" />
+            <state relative-caret-position="493">
+              <caret line="495" column="16" selection-start-line="495" selection-start-column="16" selection-end-line="495" selection-end-column="16" />
               <folding>
                 <element signature="e#0#35#0" expanded="true" />
               </folding>
@@ -72,6 +70,9 @@
       <find>transition[(,ε)]</find>
       <find>**</find>
       <find>glue</find>
+      <find>glu</find>
+      <find>state</find>
+      <find>reached_final_states</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -177,8 +178,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/genLexer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="59">
-          <caret line="334" column="57" lean-forward="true" selection-start-line="334" selection-start-column="57" selection-end-line="334" selection-end-column="57" />
+        <state relative-caret-position="493">
+          <caret line="495" column="16" selection-start-line="495" selection-start-column="16" selection-end-line="495" selection-end-column="16" />
           <folding>
             <element signature="e#0#35#0" expanded="true" />
           </folding>

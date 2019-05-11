@@ -332,8 +332,8 @@ def glue_nfas(nfas: iter) -> NFA:
 
 
 # -----------------------------------------------------------------------------|
-def _get_ε_closure(visited: set, transition: defaultdict,
-                   ε_closure: defaultdict, state: int) -> None:
+def _get_ε_closure(visited: set, transition: dict,
+                   ε_closure: dict, state: int) -> None:
     """
 
     """
@@ -342,29 +342,49 @@ def _get_ε_closure(visited: set, transition: defaultdict,
         return
 
     visited.add(state)
-    ε_closure[state] = set()
 
+    closure = set()
     if (state, ε) in transition:
         for ε_transition_state in transition[(state, ε)]:
+            closure.add(ε_transition_state)
             _get_ε_closure(visited, transition, ε_closure, ε_transition_state)
-            ε_closure[state].union(ε_closure[ε_transition_state])
+            if ε_transition_state in ε_closure:
+                # # debug
+                # # debug
+                # print(f"state = {state}")
+                #
+                # print(f"ε_transition_state = {ε_transition_state} |")
+                # print("Transitions = ", ε_closure[ε_transition_state])
+                closure = closure.union(ε_closure[ε_transition_state])
+                
+                # # debug
+                # print(f"closure = {closure}")
+                # print("--------")
+                
+    if len(closure) > 0:
+        ε_closure[state] = closure
 # -----------------------------------------------------------------------------|
 
+δ = {
+    (0, ε): {5},
+    (1, ε): {2},
+    (2, ε): {1, 4},
+    (3, ε): {5},
+    (4, ε): {6},
+    (5, ε): {4},
+    (6, ε): {5, 0},
+}
 
 # -----------------------------------------------------------------------------|
-def get_ε_closure(transition: defaultdict) -> dict:
+def get_ε_closure(transition: dict) -> dict:
     """
 
     """
 
-    ε_closure, visited = {}, set()
+    ε_closure = dict()
     for state in range(state_counter):
-        _get_ε_closure(visited, transition, ε_closure, state)
-        
-    
-    # debug
-    print(f"ε_closure[788] = {ε_closure[788]}")
-    
+        _get_ε_closure(set(), transition, ε_closure, state)
+
     return ε_closure
 # -----------------------------------------------------------------------------|
 
@@ -372,51 +392,52 @@ def get_ε_closure(transition: defaultdict) -> dict:
 # -----------------------------------------------------------------------------|
 def apply_nfa(ε_closure: dict, transition: dict, final_states: set, string: str,
               index: int, starting_states: set,
-              reached_final_states: set) -> set:
+              reached_final_states: set) -> None:
     """
 
     """
     
     # debug
-    print(f"starting_states = {starting_states}")
+    # print(f"reached_final_states = {reached_final_states}")
     
     if len(starting_states) == 0:
-        return reached_final_states
+        return
 
     if index == len(string):
-        raise SyntaxError("Syntax error in code file")
-
+        return
     next_states = set()
+    # debug
+    # print(f"starting_states = {starting_states}")
+
     for state in starting_states:
+        if state in final_states:
+            reached_final_states.add((state, index))
+
         _next_states = apply_trans(transition, state, string[index])
         for next_state in _next_states:
-            if next_state in final_states:
-                reached_final_states.add((next_state, index))
-            next_states.union(ε_closure[next_state])
+            if next_state in ε_closure:
+                next_states = next_states.union(ε_closure[next_state])
 
-    return apply_nfa(ε_closure, transition, final_states, string,
-                     index + 1, next_states, reached_final_states)
+    apply_nfa(ε_closure, transition, final_states, string,
+              index + 1, next_states.difference(starting_states), reached_final_states)
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
 def identify_lexeme(nfa: NFA, ε_closure: dict,
-                    string: str, final_states: set,
-                    index: int) -> tuple:
+                    string: str, final_states: set) -> tuple:
     """
 
     """
 
-    if index == len(string):
-        return None, index
-    transition, start, _ = nfa.transition, nfa.start, nfa.final
-    # debug
-    print(f"string ={string}")
-    # debug
-    print(f"index = {index}")
-
-    reached_final_states = apply_nfa(ε_closure, transition, final_states,
-                                     string, index, ε_closure[start], set())
+    transition, start, reached_final_states = nfa.transition, nfa.start, set()
+    apply_nfa(ε_closure = ε_closure,
+              transition = transition,
+              final_states = final_states,
+              string = string,
+              index = 0,
+              starting_states = ε_closure[start],
+              reached_final_states = reached_final_states)
 
     return max(reached_final_states, key= lambda x: (x[1], -x[0]))
 # -----------------------------------------------------------------------------|
@@ -450,11 +471,13 @@ def make_lexer(spec: LexerSpecification):
         tokens = []
         lexeme_start = 0
         while lexeme_start < len(string):
-            final_state, lexeme_end = identify_lexeme(spec_nfa, ε_closure,
-                                                      string, final_states,
-                                                      lexeme_start)
+            final_state, lexeme_end = identify_lexeme(nfa = spec_nfa,
+                                                      ε_closure = ε_closure,
+                                                      string = string,
+                                                      final_states =
+                                                      final_states)
             state_action = gen_actions[final_state]
-            if action:
+            if state_action:
                 token = state_action(string[lexeme_start: lexeme_end])
                 tokens.append(token)
         return tokens
@@ -470,7 +493,7 @@ def main():
     """
 
     # string = sys.argv[1]
-    string = "2+3*4"
+    string = "23"
     _lexer = make_lexer(LexerSpecification())
     tokens = _lexer(string)
     print(tokens)
