@@ -4,7 +4,9 @@ from pprint import pprint, PrettyPrinter
 from regex_primitives import *
 
 
-class EOF: pass
+class EOF:
+    def __repr__(self):
+        return f"Token({type(self).__name__})"
 
 
 # =============================================================================|
@@ -26,7 +28,7 @@ class Token:
         """
 
         """
-        return f"Token({type(self)} {self.lexeme})"
+        return f"Token({type(self).__name__} {self.lexeme})"
     # -------------------------------------------------------------------------|
 # =============================================================================|
 
@@ -61,6 +63,9 @@ class INT(Token): pass
 class ID(Token): pass
 
 
+class ARROW(Token): pass
+
+
 # =============================================================================|
 class LexerSpecification:
     """
@@ -92,6 +97,7 @@ class LexerSpecification:
             ("-", MINUS),
             ("*", STAR),
             ("/", SLASH),
+            ("->", ARROW),
             (Name("letters"), ID),
             (Name("digits"), INT),
         ]
@@ -461,10 +467,6 @@ def make_lexer(spec: LexerSpecification):
 
     gen_actions = dict()
     environment = build_env(spec.binding_list)
-    
-    # debug
-    print(f"environment = {environment}")
-    
     nfas = set()
     for named_regex, action in spec.patterns:
         extended_regex = extended_from_named(named_regex, environment)
@@ -477,25 +479,8 @@ def make_lexer(spec: LexerSpecification):
         gen_actions[nfa.final] = action
 
     spec_nfa = glue_nfas(nfas)
-    
-    # debug
-    print(f"spec_nfa.final = {spec_nfa.final}")
-    print(f"spec_nfa.start = {spec_nfa.start}")
-
-    # debug
-
-    for key, val in spec_nfa.transition.items():
-        print(key, ":", val)
     final_states = {nfa.final for nfa in nfas}
-    
-    # debug
-    print(f"final_states = {final_states}")
-    
     ε_closure = get_ε_closure(spec_nfa.transition)
-    
-    # debug
-    for key, val in ε_closure.items():
-        print(key, ":", val)
     
     def _lexer(string: str):
         tokens = []
@@ -504,7 +489,8 @@ def make_lexer(spec: LexerSpecification):
             final_state, lexeme_end = identify_lexeme(nfa = spec_nfa,
                                                       ε_closure = ε_closure,
                                                       string = string,
-                                                      final_states = final_states,
+                                                      final_states =
+                                                      final_states,
                                                       index = lexeme_start)
             state_action = gen_actions[final_state]
             if state_action:
@@ -526,12 +512,10 @@ def main():
     """
 
     # string = sys.argv[1]
-    string = "2*3=4"
+    string = "2*3=4 -> 10"
     _lexer = make_lexer(LexerSpecification())
     tokens = _lexer(string)
     print(tokens)
-
-
 # -----------------------------------------------------------------------------|
 
 
