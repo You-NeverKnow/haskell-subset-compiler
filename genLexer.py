@@ -129,11 +129,10 @@ def build_env(binding_list):
 
     """
 
-    environment = dict()
     for name, regex in binding_list.items():
-        environment[name] = regular_from_extended(
+        binding_list[name] = regular_from_extended(
                                 extended_from_named(regex, binding_list))
-    return environment
+    return binding_list
 # -----------------------------------------------------------------------------|  
 
 
@@ -210,7 +209,7 @@ class NFA:
 
     """
     # -------------------------------------------------------------------------|
-    def __init__(self, transition: dict, start: int, final: set):
+    def __init__(self, transition: dict, start: int, final: int):
         """
         Constructor for NFA
         """
@@ -242,17 +241,18 @@ def nfa_from_regex(regex) -> NFA:
     """
 
     """
+
     start = gen_state()
     final = gen_state()
     transition = defaultdict(set)
 
     if type(regex) == ε:
         transition[(start, ε)].add(final)
-        return NFA(transition, start, {final})
+        return NFA(transition, start, final)
 
     elif type(regex) == Char:
         transition[(start, regex.ch)].add(final)
-        return NFA(transition, start, {final})
+        return NFA(transition, start, final)
 
     elif type(regex) == Or:
         nfa_r1 = nfa_from_regex(regex.r1)
@@ -260,23 +260,24 @@ def nfa_from_regex(regex) -> NFA:
 
         transition[(start, ε)].add(nfa_r1.start)
         transition[(start, ε)].add(nfa_r2.start)
+        transition[(nfa_r1.final, ε)].add(final)
+        transition[(nfa_r2.final, ε)].add(final)
 
-        nfa_r1.transition[(nfa_r1.final, ε)].add(final)
-        nfa_r2.transition[(nfa_r2.final, ε)].add(final)
-
-        transition = {**transition, **nfa_r1.transition, **nfa_r2.transition}
-        return NFA(transition, start, {final})
+        transition = defaultdict(set, {**transition, **nfa_r1.transition,
+                                       **nfa_r2.transition})
+        return NFA(transition, start, final)
 
     elif type(regex) == Sequence:
         nfa_r1 = nfa_from_regex(regex.r1)
         nfa_r2 = nfa_from_regex(regex.r2)
 
         transition[(start, ε)].add(nfa_r1.start)
-        nfa_r1.transition[(nfa_r1.final, ε)].add(nfa_r2.start)
-        nfa_r2.transition[(nfa_r2.final, ε)].add(final)
+        transition[(nfa_r1.final, ε)].add(nfa_r2.start)
+        transition[(nfa_r2.final, ε)].add(final)
 
-        transition = {**transition, **nfa_r1.transition, **nfa_r2.transition}
-        return NFA(transition, start, {final})
+        transition = defaultdict(set, {**transition, **nfa_r1.transition,
+                                       **nfa_r2.transition})
+        return NFA(transition, start, final)
 
     elif type(regex) == Star:
         # Case 0 times repeat
@@ -285,13 +286,15 @@ def nfa_from_regex(regex) -> NFA:
         # Case more than one repeat
         nfa_r = nfa_from_regex(regex.r)
         transition[(start, ε)].add(nfa_r.start)
+        transition[(nfa_r.final, ε)].add(final)
+        transition[(nfa_r.final, ε)].add(nfa_r.start)
 
-        nfa_r.transition[(nfa_r.final, ε)].add(final)
-        nfa_r.transition[(nfa_r.final, ε)].add(nfa_r.start)
-
-        transition = {**transition, **nfa_r.transition}
-        return NFA(transition, start, {final})
+        transition = defaultdict(set, {**transition, **nfa_r.transition})
+        return NFA(transition, start, final)
     else:
+        # debug
+        print(f"regex ={regex}")
+        
         raise Exception("Not a regex")
 # -----------------------------------------------------------------------------|
 
@@ -315,21 +318,22 @@ def glue_nfas(nfas: iter) -> NFA:
 
     """
     start = gen_state()
+    final = gen_state()
+        
     transition = defaultdict(set)
-    final = set()
 
     for nfa in nfas:
         transition[(start, ε)].add(nfa.start)
-        transition = {**transition, **nfa.transition}
-        final.union(nfa.final)
+        transition[(nfa.final, ε)].add(final)
+        transition = defaultdict(set, {**transition, **nfa.transition})
 
     return NFA(transition, start, final)
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
-def _get_ε_closure(visited: set, transition: dict,
-                   ε_closure: dict, state: int) -> None:
+def _get_ε_closure(visited: set, transition: defaultdict,
+                   ε_closure: defaultdict, state: int) -> None:
     """
 
     """
@@ -339,14 +343,16 @@ def _get_ε_closure(visited: set, transition: dict,
 
     visited.add(state)
     ε_closure[state] = set()
-    for ε_transition_state in transition[(state, ε)]:
-        _get_ε_closure(visited, transition, ε_closure, ε_transition_state)
-        ε_closure[state].add(ε_closure[ε_transition_state])
+
+    if (state, ε) in transition:
+        for ε_transition_state in transition[(state, ε)]:
+            _get_ε_closure(visited, transition, ε_closure, ε_transition_state)
+            ε_closure[state].union(ε_closure[ε_transition_state])
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
-def get_ε_closure(transition) -> dict:
+def get_ε_closure(transition: defaultdict) -> dict:
     """
 
     """
@@ -354,19 +360,28 @@ def get_ε_closure(transition) -> dict:
     ε_closure, visited = {}, set()
     for state in range(state_counter):
         _get_ε_closure(visited, transition, ε_closure, state)
+        
+    
+    # debug
+    print(f"ε_closure[788] = {ε_closure[788]}")
+    
     return ε_closure
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
-def apply_nfa(ε_closure: dict, transition: dict, final: set, string: str,
-              index: int, starting_states: set, final_states: set) -> tuple:
+def apply_nfa(ε_closure: dict, transition: dict, final_states: set, string: str,
+              index: int, starting_states: set,
+              reached_final_states: set) -> set:
     """
 
     """
-
+    
+    # debug
+    print(f"starting_states = {starting_states}")
+    
     if len(starting_states) == 0:
-        return final_states, index
+        return reached_final_states
 
     if index == len(string):
         raise SyntaxError("Syntax error in code file")
@@ -375,29 +390,35 @@ def apply_nfa(ε_closure: dict, transition: dict, final: set, string: str,
     for state in starting_states:
         _next_states = apply_trans(transition, state, string[index])
         for next_state in _next_states:
-            if next_state in final:
-                final_states.add(next_state)
+            if next_state in final_states:
+                reached_final_states.add((next_state, index))
             next_states.union(ε_closure[next_state])
 
-    return apply_nfa(ε_closure, transition, final, string,
-                     index+1, next_states, final_states)
+    return apply_nfa(ε_closure, transition, final_states, string,
+                     index + 1, next_states, reached_final_states)
 # -----------------------------------------------------------------------------|
 
 
 # -----------------------------------------------------------------------------|
 def identify_lexeme(nfa: NFA, ε_closure: dict,
-                    string: str, index: int) -> tuple:
+                    string: str, final_states: set,
+                    index: int) -> tuple:
     """
 
     """
 
     if index == len(string):
         return None, index
-    transition, start, final = nfa.transition, nfa.start, nfa.final
-    
-    final_states = apply_nfa(ε_closure, transition, final, string,
-                             index, {start}, set())
-    return min(final_states)
+    transition, start, _ = nfa.transition, nfa.start, nfa.final
+    # debug
+    print(f"string ={string}")
+    # debug
+    print(f"index = {index}")
+
+    reached_final_states = apply_nfa(ε_closure, transition, final_states,
+                                     string, index, ε_closure[start], set())
+
+    return max(reached_final_states, key= lambda x: (x[1], -x[0]))
 # -----------------------------------------------------------------------------|
 
 
@@ -411,17 +432,18 @@ def make_lexer(spec: LexerSpecification):
     environment = build_env(spec.binding_list)
 
     nfas = set()
-    for regex, action in spec.patterns:
-        nfa = nfa_from_regex(regular_from_extended(
-                                    extended_from_named(regex, environment)))
+    for named_regex, action in spec.patterns:
+        extended_regex = extended_from_named(named_regex, environment)
+        regex = regular_from_extended(extended_regex)
+        nfa = nfa_from_regex(regex)
         nfas.add(nfa)
 
         # Create action binding list
-        for final in nfa.final:
-            assert final not in gen_actions
-            gen_actions[final] = action
+        assert nfa.final not in gen_actions
+        gen_actions[nfa.final] = action
 
     spec_nfa = glue_nfas(nfas)
+    final_states = {nfa.final for nfa in nfas}
     ε_closure = get_ε_closure(spec_nfa.transition)
 
     def _lexer(string: str):
@@ -429,7 +451,8 @@ def make_lexer(spec: LexerSpecification):
         lexeme_start = 0
         while lexeme_start < len(string):
             final_state, lexeme_end = identify_lexeme(spec_nfa, ε_closure,
-                                                      string, lexeme_start)
+                                                      string, final_states,
+                                                      lexeme_start)
             state_action = gen_actions[final_state]
             if action:
                 token = state_action(string[lexeme_start: lexeme_end])
