@@ -41,9 +41,11 @@ def build_env(binding_list):
 
     """
 
+    environment = dict()
     for name, regex in binding_list.items():
-        binding_list[name] = regular_from_extended(
+        environment[name] = regular_from_extended(
                                 extended_from_named(regex, binding_list))
+    return environment
 # -----------------------------------------------------------------------------|  
 
 
@@ -255,17 +257,31 @@ def make_lexer(spec: LexerSpecification):
 
     """
 
+    gen_actions = dict()
+    environment = build_env(spec.binding_list)
+
     nfas = set()
-    build_env(spec.binding_list)
+    for regex, action in spec.patterns:
+        nfa = nfa_from_regex(regular_from_extended(
+                                    extended_from_named(regex, environment)))
+        nfas.add(nfa)
 
-    for regex in spec.patterns:
-        nfas.add(nfa_from_regex(regex))
+        # Create action binding list
+        for final in nfa.final:
+            assert final not in gen_actions
+            gen_actions[final] = action
 
-    language_nfa = glue_nfas(nfas)
-    ε_closure = get_ε_closure(language_nfa.transition)
+    spec_nfa = glue_nfas(nfas)
+    ε_closure = get_ε_closure(spec_nfa.transition)
 
     def _lexer(string: str):
-
+        tokens = []
+        i = 0
+        while i < len(string):
+            final_state, lexeme = get_state(i)
+            token = gen_actions[final_state](lexeme)
+            tokens.append(token)
+        return tokens
 
     return _lexer
 # -----------------------------------------------------------------------------|
