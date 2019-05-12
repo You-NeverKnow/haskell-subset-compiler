@@ -1,112 +1,8 @@
 from collections import defaultdict
-from pprint import pprint, PrettyPrinter
-
 from regex_primitives import *
 
 
-class EOF:
-    def __repr__(self):
-        return f"Token({type(self).__name__})"
-
-
-# =============================================================================|
-class Token:
-    """
-
-    """
-
-    # -------------------------------------------------------------------------|
-    def __init__(self, lexeme):
-        """
-        Constructor for Token
-        """
-        self.lexeme = lexeme
-    # -------------------------------------------------------------------------|
-
-    # -------------------------------------------------------------------------|
-    def __repr__(self):
-        """
-
-        """
-        return f"Token({type(self).__name__} {self.lexeme})"
-    # -------------------------------------------------------------------------|
-# =============================================================================|
-
-
-class LET(Token): pass
-
-
-class IN(Token): pass
-
-
-class EQ(Token): pass
-
-
-class COMMA(Token): pass
-
-
-class PLUS(Token): pass
-
-
-class MINUS(Token): pass
-
-
-class STAR(Token): pass
-
-
-class SLASH(Token): pass
-
-
-class INT(Token): pass
-
-
-class ID(Token): pass
-
-
-class ARROW(Token): pass
-
-
-# =============================================================================|
-class LexerSpecification:
-    """
-
-    """
-
-    # -------------------------------------------------------------------------|
-    def __init__(self):
-        """
-        Constructor for LexerSpecification
-        """
-        self.eof = EOF()
-        self.binding_list = {
-            "whitespace":Range(Char(chr(0)), Char(chr(32))),
-            "upper":Range(Char("A"), Char("Z")),
-            "lower":Range(Char("a"), Char("z")),
-            "letter":Or(Name("lower"), Name("upper")),
-            "letters":Plus(Name("letter")),
-            "digit":Range(Char("0"), Char("9")),
-            "digits":Plus(Name("digit"))
-        }
-        self.patterns = [
-            (Plus(Name("whitespace")), False),
-            ("let", LET),
-            ("in", IN),
-            ("=", EQ),
-            (",", COMMA),
-            ("+", PLUS),
-            ("-", MINUS),
-            ("*", STAR),
-            ("/", SLASH),
-            ("->", ARROW),
-            (Name("letters"), ID),
-            (Name("digits"), INT),
-        ]
-    # -------------------------------------------------------------------------|
-
-
-# =============================================================================|
-
-# -----------------------------------------------------------------------------|    
+# -----------------------------------------------------------------------------|
 def extended_from_named(named_regex, binding_list: dict):
     """
      
@@ -460,7 +356,7 @@ def identify_lexeme(nfa: NFA, ε_closure: dict,
 
 
 # -----------------------------------------------------------------------------|
-def make_lexer(spec: LexerSpecification):
+def make_lexer(spec):
     """
 
     """
@@ -503,22 +399,4 @@ def make_lexer(spec: LexerSpecification):
 
     return _lexer
 # -----------------------------------------------------------------------------|
-
-
-# -----------------------------------------------------------------------------|
-def main():
-    """
-
-    """
-
-    # string = sys.argv[1]
-    string = "2*3=4 -> 10"
-    _lexer = make_lexer(LexerSpecification())
-    tokens = _lexer(string)
-    print(tokens)
-# -----------------------------------------------------------------------------|
-
-
-if __name__ == '__main__':
-    main()
 
