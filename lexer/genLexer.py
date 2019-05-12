@@ -202,9 +202,7 @@ def nfa_from_regex(regex) -> NFA:
         transition = defaultdict(set, {**transition, **nfa_r.transition})
         return NFA(transition, start, final)
     else:
-        # debug
         print(f"regex ={regex}")
-        
         raise Exception("Not a regex")
 # -----------------------------------------------------------------------------|
 
@@ -242,8 +240,7 @@ def glue_nfas(nfas: iter) -> NFA:
 
 
 # -----------------------------------------------------------------------------|
-def _get_ε_closure(visited: set, transition: dict,
-                   ε_closure: dict, state: int) -> None:
+def _get_ε_closure(visited: set, transition: dict, ε_closure: dict, state: int):
     """
 
     """
@@ -259,31 +256,12 @@ def _get_ε_closure(visited: set, transition: dict,
             closure.add(ε_transition_state)
             _get_ε_closure(visited, transition, ε_closure, ε_transition_state)
             if ε_transition_state in ε_closure:
-                # # debug
-                # # debug
-                # print(f"state = {state}")
-                #
-                # print(f"ε_transition_state = {ε_transition_state} |")
-                # print("Transitions = ", ε_closure[ε_transition_state])
                 closure = closure.union(ε_closure[ε_transition_state])
-                
-                # # debug
-                # print(f"closure = {closure}")
-                # print("--------")
-                
+
     if len(closure) > 0:
         ε_closure[state] = closure
 # -----------------------------------------------------------------------------|
 
-δ = {
-    (0, ε): {5},
-    (1, ε): {2},
-    (2, ε): {1, 4},
-    (3, ε): {5},
-    (4, ε): {6},
-    (5, ε): {4},
-    (6, ε): {5, 0},
-}
 
 # -----------------------------------------------------------------------------|
 def get_ε_closure(transition: dict) -> dict:

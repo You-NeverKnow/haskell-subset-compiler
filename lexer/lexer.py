@@ -57,6 +57,7 @@ class String(Token): pass
 class EQ(Token): pass
 class COMMA(Token): pass
 
+## Int
 class PLUS(Token): pass
 class MINUS(Token): pass
 class STAR(Token): pass
@@ -68,6 +69,7 @@ class LESS(Token): pass
 class GEQ(Token): pass
 class GREAT(Token): pass
 
+## Double
 class PLUSD(Token): pass
 class MINUSD(Token): pass
 class TIMESD(Token): pass
@@ -79,6 +81,7 @@ class LESSD(Token): pass
 class GEQD(Token): pass
 class GREATD(Token): pass
 
+## Other-operators
 class LAM(Token): pass
 class ARROW(Token): pass
 class AND2(Token): pass
