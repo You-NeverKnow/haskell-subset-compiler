@@ -1,0 +1,25 @@
+average : (Double, Double) -> Double
+average(x, y) = (x+.y)/.2.0
+
+len : [a] -> Integer
+len([]) = []
+len(x::xs) = 1 + len(xs)
+
+append : ([a], [a]) -> [a]
+append(L1, L2) =
+  case L1 of
+   []    -> L2;
+   x::xs -> x::append(xs, L2)
+
+data MyList a = Empty || Cons(a, MyList(a))
+
+fact : Integer -> Integer
+fact(n) = if n == 0 then 1 else n * fact(n-1)
+
+quad : (Double, Double, Double) -> Double
+quad(a,b,c) =
+  let e = b*.b -. 4.0*.a*.c,
+      d = sqrt(e)
+  in (-.b +. d)/.(2.0*.a)
+
+print("done")
