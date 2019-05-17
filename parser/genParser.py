@@ -184,7 +184,7 @@ class Action:
     """
 
     # -------------------------------------------------------------------------|
-    def __init__(self, args_len, action):
+    def __init__(self, args_len, action = None):
         """
         Constructor for Action
         """
@@ -213,8 +213,7 @@ def get_augmented_grammar(grammar, action_dict) -> dict:
     # Augment grammar with actions
     for var in grammar:
         for i, _ in enumerate(grammar[var]):
-            grammar_actions[var].append((action_dict[var][i],) + grammar[var][i]
-                                        )
+            grammar_actions[var].append(grammar[var][i]+(action_dict[var][i],))
 
     return grammar_actions
 # -----------------------------------------------------------------------------|
@@ -243,11 +242,11 @@ def gen_oracle(grammar: dict, action_dict: dict):
                     table[var][prediction] = grammar_actions[var][i]
     
     #debug
-    print("Oracle: ")
-    for x in table:
-        for y in table[x]:
-            print(f"{x}, {y}")
-            print(f"table = {table[x][y]}")
+    # print("Oracle: ")
+    # for x in table:
+    #     for y in table[x]:
+    #         print(f"{x}, {y}")
+    #         print(f"table = {table[x][y]}")
 
     def oracle(variable: str, terminal: type) -> tuple:
         return table[variable][terminal]
@@ -268,8 +267,25 @@ class Operator:
         """
         self.x = x
         self.y = y
-    # -------------------------------------------------------------------------|
 
+        if type(self) == SumInt:
+            self.sign = "+"
+        elif type(self) == DifferenceInt:
+            self.sign = "-"
+        elif type(self) == ProductInt:
+            self.sign = "*"
+        elif type(self) == QuotientInt:
+            self.sign = "/"
+
+    # -------------------------------------------------------------------------|
+    # -------------------------------------------------------------------------|
+    def __repr__(self, ):
+        """
+
+        """
+
+        return f"({self.sign} {self.x} {self.y})"
+    # -------------------------------------------------------------------------|
 # =============================================================================|
 
 
@@ -291,6 +307,15 @@ class Negative:
         """
         self.x = x
     # -------------------------------------------------------------------------|
+
+    # -------------------------------------------------------------------------|
+    def __repr__(self, ):
+        """
+
+        """
+
+        return f"(-{self.x})"
+    # -------------------------------------------------------------------------|
 # =============================================================================|
 
 
@@ -303,41 +328,34 @@ def make_parser(grammar: dict, action_dict: dict):
     oracle = gen_oracle(grammar, action_dict)
     aug_grammar = get_augmented_grammar(grammar, action_dict)
 
-    parse_stack = [*aug_grammar["S"][0]]
+    parse_stack = [*aug_grammar["S"][0][::-1]]
     sem_stack = []
 
     def parser(tokens: list):
 
         i = 0
         nonlocal sem_stack, parse_stack
-        while parse_stack:
-            # debug
-            print(f"parse_stack = {parse_stack}")
-            # debug
-            print(f"sem_stack = {sem_stack}")
 
+        while parse_stack:
             stack_top = parse_stack.pop()
+
             if is_terminal(stack_top):
-                assert stack_top != tokens[i]
-                # parse_stack.pop()
-                sem_stack.append(stack_top)
+                # If terminal, put in semantic stack
+                sem_stack.append(tokens[i].evaluate())
                 i += 1
             elif is_variable(stack_top):
-                # var = parse_stack.pop()
-                rule = oracle(variable = stack_top, terminal = tokens[i])
-                sem_stack += rule
+                # If variable, find rule that corresponds to that var and token
+                rule = oracle(variable = stack_top, terminal = type(tokens[i]))
+                parse_stack += rule[::-1]
             else:
-                # action = parse_stack.pop()
-                # debug
-                print(f"action = {stack_top}")
-                
-                args = sem_stack[-stack_top.args_len:]
-                # debug
-                print(f"args = {args}")
-                
-                sem_stack = sem_stack[:-stack_top.args_len]
-                value = stack_top.action(*args)
-                sem_stack.append(value)
+                # One rule processed => combine tokens from
+                # semantic stack into logical units
+                n, f = stack_top.args_len, stack_top.action
+                if f:
+                    args = sem_stack[-n:]
+                    sem_stack = sem_stack[:-n]
+                    value = f(*args)
+                    sem_stack.append(value)
 
         return sem_stack[0]
 
@@ -378,36 +396,47 @@ def main():
             (OP, "E", CP),
         ]
     }
+    # ----------------------------- #
+    # - Action-functions -#
+    # ----------------------------- #
+    def ignore_eof(expr, eof): return expr
+    def make_sum(x, sign, y): return SumInt(x, y)
+    def make_diff(x, sign, y): return DifferenceInt(x, y)
+    def make_prod(x, sign, y): return ProductInt(x, y)
+    def make_div(x, sign, y): return QuotientInt(x, y)
+    def make_neg(sign, x): return Negative(x)
+    def make_parenthesis(op, x, cp): return x
+    # ----------------------------- #
 
     actions = {
         "S": [
-            Action(2, lambda x, y: x),
+            Action(2, ignore_eof),
         ],
         "E": [
-            Action(2, lambda x, y: y(x)),
+            Action(2),
         ],
         "E2": [
-            Action(3, lambda x, y, z: lambda T: z(SumInt(T, y))),
-            Action(3, lambda x, y, z: lambda T: z(DifferenceInt(T, y))),
-            Action(0, lambda T: T)
+            Action(3, make_sum),
+            Action(3, make_diff),
+            Action(0)
         ],
         "T": [
-            Action(2, lambda x, y: y(x)),
+            Action(2),
         ],
         "T2": [
-            Action(3, lambda x, y, z: lambda F: z(ProductInt(F, y))),
-            Action(3, lambda x, y, z: lambda F: z(QuotientInt(F, y))),
-            Action(0, lambda F: F)
+            Action(3, make_prod),
+            Action(3, make_div),
+            Action(0)
         ],
         "F": [
-            Action(0, lambda F: F),
-            Action(0, lambda F: F),
-            Action(2, lambda x, y: Negative(y)),
-            Action(3, lambda x, y, z: y)
+            Action(0),
+            Action(0),
+            Action(2, make_neg),
+            Action(3, make_parenthesis)
         ]
     }
 
-    string = "2+3=5"
+    string = "4+(-5)"
     _lexer = make_lexer(LexerSpecification())
     tokens = _lexer(string)
     parser = make_parser(grammar, actions)
