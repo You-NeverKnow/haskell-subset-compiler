@@ -46,24 +46,24 @@ actions = {
         Action(2, ignore_eof),
     ],
     "E": [
-        Action(2),
+        Action(),
     ],
     "E2": [
         Action(3, make_sum),
         Action(3, make_diff),
-        Action(0)
+        Action()
     ],
     "T": [
-        Action(2),
+        Action(),
     ],
     "T2": [
         Action(3, make_prod),
         Action(3, make_div),
-        Action(0)
+        Action()
     ],
     "F": [
-        Action(0),
-        Action(0),
+        Action(),
+        Action(),
         Action(2, make_neg),
         Action(3, make_parenthesis)
     ]

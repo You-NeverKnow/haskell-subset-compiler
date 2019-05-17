@@ -5,7 +5,7 @@ class Action:
     """
 
     # -------------------------------------------------------------------------|
-    def __init__(self, args_len, action = None):
+    def __init__(self, args_len = 0, action = None):
         """
         Constructor for Action
         """
