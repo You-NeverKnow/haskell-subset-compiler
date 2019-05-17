@@ -246,12 +246,14 @@ def make_parser(grammar: dict, action_dict: dict):
                 rule = oracle(variable = stack_top, terminal = type(tokens[i]))
                 parse_stack += rule[::-1]
             else:
-                # One rule processed => combine tokens from
+                # A rule processed => combine tokens from
                 # semantic stack into logical units
                 n, f = stack_top.args_len, stack_top.action
                 if f:
-                    args = sem_stack[-n:]
-                    sem_stack = sem_stack[:-n]
+                    args = []
+                    if n > 0:
+                        args = sem_stack[-n:]
+                        sem_stack = sem_stack[:-n]
                     value = f(*args)
                     sem_stack.append(value)
 
