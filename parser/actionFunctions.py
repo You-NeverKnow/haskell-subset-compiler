@@ -116,15 +116,16 @@ class Declarations:
 
 
 # =============================================================================|
-class Decl:
+class DataDecl:
     """
 
     """
     # -------------------------------------------------------------------------|
-    def __init__(self, formals, constructors):
+    def __init__(self, identifier, formals, constructors):
         """
         Constructor for Declarations
         """
+        self.identifier = identifier
         self.formals = formals
         self.constructors = constructors
     # -------------------------------------------------------------------------|
@@ -139,6 +140,36 @@ class Decl:
     # -------------------------------------------------------------------------|
 # =============================================================================|
 
+# =============================================================================|
+class TypeDecl:
+    """
+
+    """
+    # -------------------------------------------------------------------------|
+    def __init__(self, identifier, dtype):
+        """
+        Constructor for TypeDecl
+        """
+        self.identifier = identifier
+        self.dtype = dtype
+    # -------------------------------------------------------------------------|
+# =============================================================================|
+
+
+# =============================================================================|
+class Assignment:
+    """
+
+    """
+    # -------------------------------------------------------------------------|
+    def __init__(self, identifier, value):
+        """
+        Constructor for Assi
+        """
+        self.identifier = identifier
+        self.value = value
+    # -------------------------------------------------------------------------|
+# =============================================================================|
 
 # ----------------------------- #
 # Action-functions
@@ -149,8 +180,15 @@ def ignore_eof(decls, eof): return decls
 def make_decls(): return Declarations()
 
 
-def make_decl(data_token, id_token, formals, eq_sign, constructors):
-    return Decl(formals, constructors)
+def make_data_decl(data_token, id_token, formals, eq_sign, constructors):
+    return DataDecl(id_token, formals, constructors)
+
+
+def make_type_decl(identifier, colon, dtype): return TypeDecl(identifier, dtype)
+
+
+def make_assignment(identifier, eq, value):
+    return Assignment(identifier, value)
 
 
 def add_decl(decl, decls):

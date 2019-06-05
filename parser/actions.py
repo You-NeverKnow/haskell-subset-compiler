@@ -14,16 +14,16 @@ actions = {
         Action(2, add_decl), # :TODO
     ],
     "decl": [
-        Action(5, make_decl),
-        Action(), # :TODO
+        Action(5, make_data_decl),
+        Action(),
     ],
-    "E2": [
-        Action(3, make_sum),
-        Action(3, make_diff),
+    "decls2": [
+        Action(3, make_type_decl),
+        Action(3, make_assignment),
         Action()
     ],
-    "T": [
-        Action(),
+    "decls3": [
+        Action(6, make_function),
     ],
     "T2": [
         Action(3, make_prod),
